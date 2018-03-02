@@ -24,5 +24,9 @@ module.exports = {
         }
       }
     }
+  },
+  telegram: {
+    token: 'bot token',
+    channel: 'channel id'
   }
 }

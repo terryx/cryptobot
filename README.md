@@ -1,5 +1,10 @@
 ## Cryptobot
 
+## Prerequisite
+- NodeJS version >= 8
+- A Binance account
+- A Telegram bot and channel 
+
 ## Getting Started
 ```
 cp config.sample.js config.dev.js
