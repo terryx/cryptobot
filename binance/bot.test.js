@@ -5,7 +5,7 @@ const bot = Bot(config.binance)
 
 // BEWARE this test will cancel existing open order depending on market price
 test('buy', t => {
-  return bot.buy('LTCUSDT', true)
+  return bot.buy({ symbol: 'LTCUSDT', format: '0.00' }, true)
     .map(res => {
       t.log(res)
       t.pass()
@@ -13,7 +13,7 @@ test('buy', t => {
 })
 
 test('sell', t => {
-  return bot.sell('LTCUSDT', true)
+  return bot.sell({ symbol: 'LTCUSDT', format: '0.00' }, true)
     .map(res => {
       t.log(res)
       t.pass()

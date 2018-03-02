@@ -25,13 +25,13 @@ const watch = () => {
 
       if (volume >= config.gdax.product_id[productId].alert_buy_volume && !argv.test) {
         volume = 0
-        return binance.buy(argv.symbol).mergeMap(res => telegram.send(res).mapTo(res))
+        return binance.buy({ symbol: argv.symbol }).mergeMap(res => telegram.send(res).mapTo(res))
       }
 
       if (volume <= config.gdax.product_id[productId].alert_sell_volume && !argv.test) {
         volume = 0
         const data = { order: 1 }
-        return binance.sell(argv.symbol).mergeMap(res => telegram.send(data).mapTo(res))
+        return binance.sell({ symbol: argv.symbol }).mergeMap(res => telegram.send(data).mapTo(res))
       }
 
       return Observable.of(result)

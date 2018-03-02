@@ -29,7 +29,7 @@ const constructor = (config) => {
 
   const api = {}
 
-  api.getPrice = ({ symbol, rate, format = '0.00' }) => Observable
+  api.getPrice = ({ symbol, rate, format }) => Observable
     .fromPromise(req.get('/v3/ticker/price', { qs: { symbol } }))
     .map(data => {
       const result = {
@@ -68,6 +68,24 @@ const constructor = (config) => {
       .mergeMap(res => Observable.from(res))
       .filter(res => res.status === 'NEW' && res.side === side)
       .toArray()
+  }
+
+  api.getLastTradePrice = ({ symbol, side }) => {
+    const url = `/v3/myTrades`
+    const data = {
+      symbol,
+      timestamp: moment().format('x')
+    }
+
+    const isBuyer = side === 'BUY'
+
+    return Observable
+      .fromPromise(req.get(encrypt(data, url)))
+      .mergeMap(res => Observable.from(res))
+      .filter(res => res.isBuyer === isBuyer && res.isMaker === true)
+      .takeLast(1)
+      .map(res => res.price)
+      .defaultIfEmpty(0)
   }
 
   return api
