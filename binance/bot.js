@@ -9,7 +9,7 @@ const constructor = (config) => {
   /*
   Step 1. Get market price AND get all open buy orders
   Step 2. Compare market price with current open orders
-  Step 3. Cancel open orders IF market price is lower
+  Step 3. Cancel open orders
   Step 4. Place new order regardless of existing open order
   */
   const buy = ({ symbol, format = '0.00' }, isTest = false) => {
@@ -23,7 +23,6 @@ const constructor = (config) => {
       .mergeMap(([ price, orders ]) =>
         Observable
           .from(orders)
-          .filter(order => numeral(order.price).value() > numeral(price).value())
           .mergeMap(order => binance.cancelOrder({
             symbol: order.symbol,
             orderId: order.orderId,
