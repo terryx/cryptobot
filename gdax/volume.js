@@ -8,7 +8,6 @@ const getTotal = (size, price) => {
 
 const stream = ({ productId, filterSize, filterTotalPrice }) => {
   const websocket = new Gdax.WebsocketClient([ productId ])
-  const volume = numeral(0)
 
   return Observable
     .fromEvent(websocket, 'message')
@@ -18,19 +17,6 @@ const stream = ({ productId, filterSize, filterTotalPrice }) => {
     .filter(feed => numeral(feed.remaining_size).value() >= filterSize)
     .filter(feed => getTotal(feed.remaining_size, feed.price) >= filterTotalPrice)
     .distinct(res => res.order_id)
-    .map(feed => {
-      const total = getTotal(feed.remaining_size, feed.price)
-      const side = feed.side.toUpperCase()
-      if (side === 'BUY') {
-        volume.add(total)
-      }
-
-      if (side === 'SELL') {
-        volume.subtract(total)
-      }
-
-      return volume.value()
-    })
 }
 
-module.exports = { stream }
+module.exports = { getTotal, stream }

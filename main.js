@@ -1,5 +1,6 @@
 const { Observable } = require('rxjs')
 const { argv } = require('yargs')
+const numeral = require('numeral')
 const Binance = require('./binance/bot')
 const Telegram = require('./telegram/message')
 const gdax = require('./gdax/volume')
@@ -13,38 +14,38 @@ const watch = () => {
     filterTotalPrice: config.gdax.product_id[productId].filter_total_price
   }
 
-  let volume = 0
-
+  const volume = numeral(0)
   const binance = Binance(config.binance)
   const telegram = Telegram(config.telegram)
 
   return gdax
     .stream(data)
-    .map(result => {
-      volume = result
-
-      if (volume >= config.gdax.product_id[productId].alert_buy_volume && !argv.test) {
-        volume = 0
-        return 'buy'
+    .map(feed => {
+      const total = gdax.getTotal(feed.remaining_size, feed.price)
+      const side = feed.side.toUpperCase()
+      if (side === 'BUY') {
+        volume.add(total)
       }
 
-      if (volume <= config.gdax.product_id[productId].alert_sell_volume && !argv.test) {
-        volume = 0
-        return 'sell'
+      if (side === 'SELL') {
+        volume.subtract(total)
       }
 
-      return result
+      return volume.value()
     })
-    .mergeMap(result => {
-      if (result === 'buy') {
-        return binance.buy({ symbol: argv.symbol }).mergeMap(res => telegram.send(res).mapTo(res))
+    .bufferTime(6000)
+    .mergeMap(buffers => {
+      if (volume.value() >= config.gdax.product_id[productId].alert_buy_volume) {
+        volume.set(0)
+        return binance.buy({ symbol: argv.symbol }, argv.test).mergeMap(res => telegram.send(res).mapTo(res))
       }
 
-      if (result === 'sell') {
-        return binance.sell({ symbol: argv.symbol }).mergeMap(res => telegram.send(res).mapTo(res))
+      if (volume.value() <= config.gdax.product_id[productId].alert_sell_volume) {
+        volume.set(0)
+        return binance.sell({ symbol: argv.symbol }, argv.test).mergeMap(res => telegram.send(res).mapTo(res))
       }
 
-      return Observable.of(result)
+      return Observable.of(volume.value())
     })
     .subscribe(
       (result) => console.info(result),
