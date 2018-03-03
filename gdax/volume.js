@@ -16,7 +16,8 @@ const stream = ({ productId, filterSize, filterTotalPrice }) => {
     .filter(feed => feed.type === 'open')
     .filter(feed => numeral(feed.remaining_size).value() >= filterSize)
     .filter(feed => getTotal(feed.remaining_size, feed.price) >= filterTotalPrice)
-    .distinct(res => res.order_id)
+    .bufferCount(10)
+    .mergeMap(feeds => Observable.from(feeds).distinct(feed => feed.order_id))
 }
 
 module.exports = { getTotal, stream }

@@ -33,7 +33,7 @@ const watch = () => {
 
       return volume.value()
     })
-    .bufferTime(6000)
+    .bufferTime(5000)
     .mergeMap(buffers => {
       if (volume.value() >= config.gdax.product_id[productId].alert_buy_volume) {
         volume.set(0)
