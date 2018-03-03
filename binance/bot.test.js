@@ -14,8 +14,8 @@ test('buy', t => {
 
 test('sell', t => {
   return bot.sell({ symbol: 'LTCUSDT', format: '0.00' }, true)
+    .defaultIfEmpty(null)
     .map(res => {
-      t.log(res)
       t.pass()
     })
 })

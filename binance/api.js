@@ -11,7 +11,7 @@ const constructor = (config) => {
       'Content-Type': 'application/json',
       'X-MBX-APIKEY': config.api_key
     },
-    baseUrl: 'https://api.binance.com/api',
+    baseUrl: 'https://api.binance.com/api/v3',
     json: true
   })
 
@@ -30,7 +30,7 @@ const constructor = (config) => {
   const api = {}
 
   api.getPrice = ({ symbol, rate, format }) => Observable
-    .fromPromise(req.get('/v3/ticker/price', { qs: { symbol } }))
+    .fromPromise(req.get('/ticker/price', { qs: { symbol } }))
     .map(data => {
       const result = {
         old_value: numeral(data.price).format(format),
@@ -41,23 +41,23 @@ const constructor = (config) => {
     })
 
   api.placeOrder = (data, isTest = false) => {
-    let url = '/v3/order'
+    let url = '/order'
     if (isTest) {
-      url = '/v3/order/test'
+      url = '/order/test'
     }
 
     return Observable.fromPromise(req.post(encrypt(data, url)))
   }
 
   api.cancelOrder = (data) => {
-    const url = '/v3/order'
+    const url = '/order'
 
     return Observable.fromPromise(req.delete(encrypt(data, url)))
   }
 
   // get ongoing buy order
   api.getOrders = ({ symbol, side }) => {
-    const url = `/v3/openOrders`
+    const url = `/openOrders`
     const data = {
       symbol,
       timestamp: moment().format('x')
@@ -71,7 +71,7 @@ const constructor = (config) => {
   }
 
   api.getLastTradePrice = ({ symbol, side }) => {
-    const url = `/v3/myTrades`
+    const url = `/myTrades`
     const data = {
       symbol,
       timestamp: moment().format('x')
@@ -86,6 +86,19 @@ const constructor = (config) => {
       .takeLast(1)
       .map(res => res.price)
       .defaultIfEmpty(0)
+  }
+
+  api.getAccountBalance = ({ symbol, side }) => {
+    const url = '/account'
+    const data = { timestamp: moment().format('x') }
+    const baseCurrency = symbol.substr(0, 3)
+    const counterCurrency = symbol.substr(3, symbol.length)
+    const filterCurrency = side === 'BUY' ? counterCurrency : baseCurrency
+
+    return Observable
+      .fromPromise(req.get(encrypt(data, url)))
+      .mergeMap(res => Observable.from(res.balances))
+      .filter(balance => balance.asset === filterCurrency)
   }
 
   return api

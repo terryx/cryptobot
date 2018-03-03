@@ -48,13 +48,15 @@ const constructor = (config) => {
 
   /*
   Step 1. Get market price AND last buy trade price
-  Step 2. Compare both prices and take highest price for sell multiply with defined rate
+  Step 2. Compare both prices and take (best) highest price for sell multiply with defined rate
   Step 3. Get open sell orders
-  Step 4. Cancel open orders IF market price is higher
-  Step 5. Place new order IF price is higher than last trade
+  Step 4. Cancel open orders IF best price is higher
+  Step 5. Check for account balance
+  Step 6. Place new order IF price is higher than last trade
   */
   const sell = ({ symbol, format = '0.00' }, isTest = false) => {
     const { rate, quantity } = config.symbols[symbol].ask
+    const side = 'SELL'
 
     return Observable
       .zip(
@@ -70,7 +72,7 @@ const constructor = (config) => {
       )
       .mergeMap(price =>
         binance
-          .getOrders({ symbol, side: 'SELL' })
+          .getOrders({ symbol, side })
           .mergeMap(orders => Observable
             .from(orders)
             .filter(order => numeral(order.price).value() < numeral(price).value())
@@ -80,6 +82,10 @@ const constructor = (config) => {
               timestamp: moment().format('x')
             }))
             .defaultIfEmpty(null)
+          )
+          .mergeMap(() => binance
+            .getAccountBalance({ symbol, side })
+            .filter(balance => numeral(balance.free).value() >= quantity)
             .mapTo(price)
           )
       )
