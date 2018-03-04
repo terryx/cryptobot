@@ -10,15 +10,17 @@ const constructor = (config) => {
   Step 1. Get market price AND get all open buy orders
   Step 2. Compare market price with current open orders
   Step 3. Cancel open orders
+  Step 4. Check for account balance
   Step 4. Place new order regardless of existing open order
   */
   const buy = ({ symbol, format = '0.00' }, isTest = false) => {
     const { rate, quantity } = config.symbols[symbol].bid
+    const side = 'BUY'
 
     return Observable
       .zip(
         binance.getPrice({ symbol, rate }).map(res => res.new_value),
-        binance.getOrders({ symbol, side: 'BUY' })
+        binance.getOrders({ symbol, side })
       )
       .mergeMap(([ price, orders ]) =>
         Observable
@@ -29,14 +31,19 @@ const constructor = (config) => {
             timestamp: moment().format('x')
           }))
           .defaultIfEmpty(null)
-          .mapTo(price)
+          .toArray()
+          .mergeMap(() => binance
+            .getAccountBalance({ symbol, side })
+            .filter(balance => numeral(balance.free).value() <= quantity)
+            .mapTo(price)
+          )
       )
       .mergeMap(price => binance
         .placeOrder({
-          symbol: symbol,
-          side: 'BUY',
-          quantity: quantity,
-          price: price,
+          symbol,
+          side,
+          quantity,
+          price,
           timestamp: moment().format('x'),
           type: 'LIMIT',
           timeInForce: 'GTC',
