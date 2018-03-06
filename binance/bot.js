@@ -34,7 +34,7 @@ const constructor = (config) => {
           .toArray()
           .mergeMap(() => binance
             .getAccountBalance({ symbol, side })
-            .filter(balance => numeral(balance.free).value() <= quantity)
+            .filter(balance => numeral(balance.free).value() >= quantity)
             .mapTo(price)
           )
       )
