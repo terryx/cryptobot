@@ -69,7 +69,7 @@ const constructor = (config) => {
       .zip(
         binance
           .getPrice({ symbol, rate, format })
-          .map(res => res.new_value),
+          .map(res => res.old_value),
         binance
           .getLastTradePrice({ symbol, side: 'BUY' })
           .map(value => numeral(value).multiply(rate).format(format))
