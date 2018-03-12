@@ -1,57 +1,59 @@
 const { Observable } = require('rxjs')
 const { argv } = require('yargs')
 const numeral = require('numeral')
-const Binance = require('./binance/bot')
+const Bot = require('./binance/bot')
 const Telegram = require('./telegram/message')
-const gdax = require('./gdax/volume')
 const config = require(`./config.${argv.env}`)
+const helper = require('./utils/helper')
+const w3cwebsocket = require('websocket').w3cwebsocket
+const symbol = argv.symbol
 
-const watch = () => {
-  const productId = argv.product_id
-  const data = {
-    productId: productId,
-    filterSize: config.gdax.product_id[productId].filter_remaining_size,
-    filterTotalPrice: config.gdax.product_id[productId].filter_total_price
-  }
-
-  const volume = numeral(0)
-  const binance = Binance(config.binance)
+const executeOrder = (side) => {
+  const bot = Bot(config.binance)
   const telegram = Telegram(config.telegram)
 
-  return gdax
-    .stream(data)
-    .map(feed => {
-      const total = gdax.getTotal(feed.remaining_size, feed.price)
-      const side = feed.side.toUpperCase()
-      if (side === 'BUY') {
-        volume.add(total)
-      }
+  return bot[side]({ symbol: argv.symbol.toUpperCase() }, argv.test)
+    .mergeMap(res => telegram.send(res).mapTo(res))
+}
 
-      if (side === 'SELL') {
-        volume.subtract(total)
-      }
+const stream = () => {
+  const websocket = Observable.webSocket({
+    url: `wss://stream.binance.com:9443/stream?streams=${symbol.toLowerCase()}@aggTrade`,
+    WebSocketCtor: w3cwebsocket
+  })
 
-      return volume.value()
+  const alert = config.binance.symbols[symbol.toUpperCase()].alert
+
+  return websocket
+    .map(res => res.data)
+    .scan((acc, cur) => {
+      const total = helper.getTotal(cur.q, cur.p)
+      const sum = numeral(acc)
+      acc = cur.m === true ? sum.add(total) : sum.subtract(total)
+
+      return acc.value()
+    }, 0)
+    .do(total => {
+      if (argv.test) {
+        console.log(total)
+      }
     })
-    .bufferTime(5000)
-    .mergeMap(buffers => {
-      if (volume.value() >= config.gdax.product_id[productId].alert_buy_volume) {
-        volume.set(0)
-        return binance.buy({ symbol: argv.symbol }, argv.test).mergeMap(res => telegram.send(res).mapTo(res))
+    .filter(res => res > alert.buy || res < alert.sell)
+    .take(1)
+    .mergeMap(total => {
+      if (total > 0) {
+        return executeOrder('buy')
       }
 
-      if (volume.value() <= config.gdax.product_id[productId].alert_sell_volume) {
-        volume.set(0)
-        return binance.sell({ symbol: argv.symbol }, argv.test).mergeMap(res => telegram.send(res).mapTo(res))
+      if (total < 0) {
+        return executeOrder('sell')
       }
-
-      return Observable.of(volume.value())
     })
     .subscribe(
-      (result) => console.info(result),
+      (result) => console.info('reached', result),
       (error) => console.error(error.message),
-      () => watch()
+      () => stream()
     )
 }
 
-watch()
+stream()

@@ -11,7 +11,7 @@ const constructor = (config) => {
   Step 2. Compare market price with current open orders
   Step 3. Cancel open orders
   Step 4. Check for account balance
-  Step 4. Place new order regardless of existing open order
+  Step 5. Place new order regardless of existing open order
   */
   const buy = ({ symbol, format = '0.00' }, isTest = false) => {
     const { rate, quantity } = config.symbols[symbol].bid
@@ -98,10 +98,10 @@ const constructor = (config) => {
       )
       .mergeMap(price => binance
         .placeOrder({
-          symbol: symbol,
-          side: 'SELL',
-          quantity: quantity,
-          price: price,
+          symbol,
+          side,
+          quantity,
+          price,
           timestamp: moment().format('x'),
           type: 'LIMIT',
           timeInForce: 'GTC',
