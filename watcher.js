@@ -25,7 +25,7 @@ const main = () => {
     .map(total => total.value())
     .do(console.log)
     .find(value => value >= config.watcher.buy || value <= config.watcher.sell)
-    .mergeMap(value => telegram.send(`${symbol} ${value}`).mapTo(value))
+    .mergeMap(value => telegram.send(`${symbol} ${numeral(value).format('$ 0.00 a')}`).mapTo(value))
     .subscribe(result => console.info('Target', result), console.error, main)
 }
 
