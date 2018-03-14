@@ -3,7 +3,7 @@
 ## Prerequisite
 - NodeJS version >= 8
 - A Binance account
-- A Telegram bot and channel 
+- A Telegram bot and channel
 
 ## Getting Started
 ```
@@ -21,5 +21,11 @@ Please make sure you have created a config file
 npm test -- -w -v
 
 # Run end to end test
-node main.js --env=dev --product_id=LTC-USD --symbol=LTCUSDT --test=true
+node main.js --env=dev --symbol=BTCUSDT --test=true
+```
+
+### Watch combined market trades
+```
+# Bitfinex, Gdax, Gemini
+node watcher.js --env=dev --symbol=BTCUSD --productId=BTC-USD
 ```

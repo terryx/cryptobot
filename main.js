@@ -33,13 +33,7 @@ const stream = () => {
 
       return acc.value()
     }, 0)
-    .do(total => {
-      if (argv.test) {
-        console.log(total)
-      }
-    })
-    .filter(res => res > alert.buy || res < alert.sell)
-    .take(1)
+    .find(res => res > alert.buy || res < alert.sell)
     .mergeMap(total => {
       if (total > 0) {
         return executeOrder('buy')
@@ -49,11 +43,7 @@ const stream = () => {
         return executeOrder('sell')
       }
     })
-    .subscribe(
-      (result) => console.info('reached', result),
-      (error) => console.error(error.message),
-      () => stream()
-    )
+    .subscribe(console.info, console.error, stream)
 }
 
 stream()

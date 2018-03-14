@@ -1,21 +1,15 @@
 module.exports = {
-  gdax: {
-    product_id: {
-      'LTC-USD': {
-        filter_total_price: 10000,
-        filter_remaining_size: 100,
-        alert_buy_volume: 10000,
-        alert_sell_volume: -100000
-      }
-    }
-  },
   binance: {
     api_key: '',
     secret: '',
     symbols: {
-      'LTCUSDT': {
+      'BTCUSDT': {
+        alert: {
+          buy: 300000,
+          sell: -300000
+        },
         bid: {
-          rate: 0.993,
+          rate: 0.99,
           quantity: 1
         },
         ask: {
@@ -26,7 +20,11 @@ module.exports = {
     }
   },
   telegram: {
-    token: 'bot token',
-    channel: 'channel id'
+    token: '',
+    channel: ''
+  },
+  watcher: {
+    buy: 500000000,
+    sell: -500000000
   }
 }
